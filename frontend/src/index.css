@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+.saldo-positivo {
+  @apply text-green-600;
+}
+
+.saldo-negativo {
+  @apply text-red-600;
+}

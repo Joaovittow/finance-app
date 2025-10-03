@@ -23,16 +23,13 @@ app.get('/api/meses', async (req, res) => {
             receitas: true,
             parcelas: {
               include: {
-                despesa: true
-              }
-            }
-          }
-        }
+                despesa: true,
+              },
+            },
+          },
+        },
       },
-      orderBy: [
-        { ano: 'desc' },
-        { mes: 'desc' }
-      ]
+      orderBy: [{ ano: 'desc' }, { mes: 'desc' }],
     });
     res.json(meses);
   } catch (error) {
@@ -44,24 +41,21 @@ app.get('/api/meses', async (req, res) => {
 app.post('/api/meses', async (req, res) => {
   try {
     const { ano, mes, userId } = req.body;
-    
+
     const novoMes = await prisma.mes.create({
       data: {
         ano,
         mes,
         userId,
         quinzenas: {
-          create: [
-            { tipo: 'primeira' },
-            { tipo: 'segunda' }
-          ]
-        }
+          create: [{ tipo: 'primeira' }, { tipo: 'segunda' }],
+        },
       },
       include: {
-        quinzenas: true
-      }
+        quinzenas: true,
+      },
     });
-    
+
     res.json(novoMes);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -72,39 +66,43 @@ app.post('/api/meses', async (req, res) => {
 app.get('/api/quinzenas/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const quinzena = await prisma.quinzena.findUnique({
       where: { id },
       include: {
         receitas: true,
         parcelas: {
           include: {
-            despesa: true
-          }
+            despesa: true,
+          },
         },
-        mes: true
-      }
+        mes: true,
+      },
     });
-    
+
     if (!quinzena) {
       return res.status(404).json({ error: 'Quinzena não encontrada' });
     }
-    
+
     // Calcular saldo disponível
-    const totalReceitas = quinzena.receitas.reduce((sum, rec) => sum + rec.valor, 0);
+    const totalReceitas = quinzena.receitas.reduce(
+      (sum, rec) => sum + rec.valor,
+      0,
+    );
     const totalDespesasPagas = quinzena.parcelas
-      .filter(p => p.pago)
+      .filter((p) => p.pago)
       .reduce((sum, parc) => sum + (parc.valorPago || parc.valorParcela), 0);
-    
-    const saldoDisponivel = quinzena.saldoAnterior + totalReceitas - totalDespesasPagas;
-    
+
+    const saldoDisponivel =
+      quinzena.saldoAnterior + totalReceitas - totalDespesasPagas;
+
     res.json({
       ...quinzena,
       calculos: {
         totalReceitas,
         totalDespesasPagas,
-        saldoDisponivel
-      }
+        saldoDisponivel,
+      },
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -116,16 +114,16 @@ app.post('/api/quinzenas/:id/receitas', async (req, res) => {
   try {
     const { id } = req.params;
     const { descricao, valor, tipo } = req.body;
-    
+
     const receita = await prisma.receita.create({
       data: {
         descricao,
         valor: parseFloat(valor),
         tipo,
-        quinzenaId: id
-      }
+        quinzenaId: id,
+      },
     });
-    
+
     res.json(receita);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -137,7 +135,7 @@ app.post('/api/quinzenas/:id/despesas', async (req, res) => {
   try {
     const { id } = req.params;
     const { descricao, valorTotal, parcelas, categoria, observacao } = req.body;
-    
+
     // Criar despesa
     const despesa = await prisma.despesa.create({
       data: {
@@ -146,38 +144,38 @@ app.post('/api/quinzenas/:id/despesas', async (req, res) => {
         parcelas: parseInt(parcelas),
         categoria,
         observacao,
-        quinzenaId: id
-      }
+        quinzenaId: id,
+      },
     });
-    
+
     // Gerar parcelas automaticamente
     const valorParcela = parseFloat(valorTotal) / parseInt(parcelas);
     const parcelasData = [];
-    
+
     for (let i = 1; i <= parseInt(parcelas); i++) {
       const dataVencimento = new Date();
-      dataVencimento.setDate(dataVencimento.getDate() + (i * 15)); // 15 dias entre parcelas
-      
+      dataVencimento.setDate(dataVencimento.getDate() + i * 15); // 15 dias entre parcelas
+
       parcelasData.push({
         numeroParcela: i,
         valorParcela,
         dataVencimento,
         despesaId: despesa.id,
-        quinzenaId: id // Primeira parcela na quinzena atual
+        quinzenaId: id, // Primeira parcela na quinzena atual
       });
     }
-    
+
     await prisma.parcela.createMany({
-      data: parcelasData
+      data: parcelasData,
     });
-    
+
     const despesaCompleta = await prisma.despesa.findUnique({
       where: { id: despesa.id },
       include: {
-        parcelasRelacao: true
-      }
+        parcelasRelacao: true,
+      },
     });
-    
+
     res.json(despesaCompleta);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -189,20 +187,20 @@ app.patch('/api/parcelas/:id/pagar', async (req, res) => {
   try {
     const { id } = req.params;
     const { valorPago } = req.body;
-    
+
     const parcela = await prisma.parcela.update({
       where: { id },
       data: {
         pago: true,
         valorPago: valorPago ? parseFloat(valorPago) : undefined,
-        dataPagamento: new Date()
+        dataPagamento: new Date(),
       },
       include: {
         despesa: true,
-        quinzena: true
-      }
+        quinzena: true,
+      },
     });
-    
+
     res.json(parcela);
   } catch (error) {
     res.status(500).json({ error: error.message });

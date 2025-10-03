@@ -6,18 +6,20 @@
     "dev": "nodemon src/server.js",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "init": "node src/scripts/init.js"
   },
   "dependencies": {
     "@prisma/client": "^5.0.0",
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
     "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.0",
-    "dotenv": "^16.3.1"
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.0"
   },
   "devDependencies": {
-    "prisma": "^5.0.0",
-    "nodemon": "^3.0.1"
+    "@biomejs/biome": "1.9.4",
+    "nodemon": "^3.0.1",
+    "prisma": "^5.0.0"
   }
 }
